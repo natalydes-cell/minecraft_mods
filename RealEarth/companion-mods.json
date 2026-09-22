@@ -1,0 +1,71 @@
+{
+  "_comment": [
+    "Companion mods for RealEarth. NOT redistributed here - this manifest points at the",
+    "authors' own files on Modrinth's CDN, pinned to exact versions and checked by SHA-512.",
+    "",
+    "Why a manifest and not bundled jars: all of these are copyleft (MPL-2.0, GPL-3.0,",
+    "LGPL-3.0). Redistribution is permitted but carries obligations, the files go stale the",
+    "day they update, and shipping other people's jars is not how the Minecraft ecosystem",
+    "works. Fetching from source keeps attribution and licensing where they belong.",
+    "",
+    "Fetch them with: tools/get-mods.bat   (or get-mods.sh)",
+    "",
+    "Every one of these is OPTIONAL. RealEarth runs without all of them."
+  ],
+  "minecraft": "1.21.1",
+  "loader": "neoforge",
+  "mods": [
+    {
+      "id": "better-clouds",
+      "name": "Better Clouds",
+      "version": "1.13.8+1.21.1-neoforge-release",
+      "filename": "better-clouds-1.13.8+1.21.1-neoforge.jar",
+      "url": "https://cdn.modrinth.com/data/5srFLIaK/versions/w0azz5HH/better-clouds-1.13.8%2B1.21.1-neoforge.jar",
+      "sha512": "edb29ab9e5e4fe0bdd400962f509e2c16b974a52bc326a69273cc2b28254cda7a5836de9fc423fb30221cb04a991d15bb76369538a8646b869ce0d5bbf76f284",
+      "sizeBytes": 817034,
+      "side": "client",
+      "license": "MPL-2.0",
+      "page": "https://modrinth.com/mod/better-clouds",
+      "why": "Volumetric clouds. RealEarth drives them: it takes coverage from max(rainLevel, thunderLevel), which this mod now sets per player."
+    },
+    {
+      "id": "yacl",
+      "name": "YetAnotherConfigLib (YACL)",
+      "version": "3.8.2+1.21.1-neoforge",
+      "filename": "yet_another_config_lib_v3-3.8.2+1.21.1-neoforge.jar",
+      "url": "https://cdn.modrinth.com/data/1eAoo2KR/versions/7TVdVtxF/yet_another_config_lib_v3-3.8.2%2B1.21.1-neoforge.jar",
+      "sha512": "583de19b927ce8050c2b7d5e60b75accc69e325e5aac85c27994c82a9dec2e4e078343fa1d4c3a10d4bd7e0e524e0b3b246a18cf03db01e363a1e6f865adcf48",
+      "sizeBytes": 1118651,
+      "side": "client",
+      "license": "LGPL-3.0-or-later",
+      "page": "https://modrinth.com/mod/yacl",
+      "why": "Config library. REQUIRED by Better Clouds - it will not load without it."
+    },
+    {
+      "id": "cold-sweat",
+      "name": "Cold Sweat",
+      "version": "2.4.3.1",
+      "filename": "ColdSweat-2.4.3.1.jar",
+      "url": "https://cdn.modrinth.com/data/uXhSmPjd/versions/r2cD4Llq/ColdSweat-2.4.3.1.jar",
+      "sha512": "5b82c84193d1433f46bf77c92207d8f18ac79ab29da200ab19d79b89d8bd98d3cd98f8512f38b879b1ddc06c3e03bc197270d66f4c648bf43e43080795154ff3",
+      "sizeBytes": 2738635,
+      "side": "both",
+      "license": "GPL-3.0-or-later",
+      "page": "https://modrinth.com/mod/cold-sweat",
+      "why": "Body temperature. RealEarth replaces its world temperature with the real climate at your position."
+    },
+    {
+      "id": "distanthorizons",
+      "name": "Distant Horizons",
+      "version": "3.3.2-1.21.1",
+      "filename": "DistantHorizons-3.3.2-1.21.1-fabric-neoforge.jar",
+      "url": "https://cdn.modrinth.com/data/uCdwusMi/versions/Ez3cx7Yd/DistantHorizons-3.3.2-1.21.1-fabric-neoforge.jar",
+      "sha512": "758d9591bb63a7851d368b6439135ec35ceb3b22e35723fca26433c4069be87c4098a23e8fc590be61903ac92e6ae1e3e1adf5beb744e6226c1fe70dd1933011",
+      "sizeBytes": 28224156,
+      "side": "client",
+      "license": "LGPL-3.0-only",
+      "page": "https://modrinth.com/mod/distanthorizons",
+      "why": "Far-distance LOD terrain. Reads getBaseHeight, so it shows real Earth relief to the horizon with no integration needed."
+    }
+  ]
+}

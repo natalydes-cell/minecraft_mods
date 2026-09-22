@@ -178,6 +178,16 @@ tasks.register('exportRelease', Copy) {
     def out = layout.buildDirectory.dir('RealEarth-Release')
     into out
 
+    // Wipe the folder first. A Copy task only adds, and this one had quietly accumulated three
+    // versions of the mod jar across rebuilds - which would fail to load, because two jars
+    // declaring the same modid is a hard error. It also picks up the companion mods after
+    // someone runs get-mods.bat against this folder, and those must not end up in the archive:
+    // they are other people's copyleft work and the whole point is that we do not redistribute
+    // them.
+    doFirst {
+        delete out
+    }
+
     from('export-root')
 
     into('mods') {
@@ -196,6 +206,9 @@ tasks.register('exportRelease', Copy) {
     into('tools') {
         from tasks.named('importerJar')
         from('export-extra')
+        // The manifest lives at the project root - one source of truth - and is copied next to
+        // the scripts that read it, so the tools folder still works if moved elsewhere.
+        from('companion-mods.json')
     }
     into('docs') {
         from('docs')

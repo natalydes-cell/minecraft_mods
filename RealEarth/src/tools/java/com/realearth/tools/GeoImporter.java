@@ -60,9 +60,19 @@ public final class GeoImporter {
     private static final int OUT_TILE_SMALL = 256;
 
     public static void main(String[] args) throws Exception {
+        // One jar, two jobs. The companion-mod fetcher reuses this jar's download plumbing and
+        // its bundled Gson, so shipping a second executable for it would be pure duplication.
+        for (String arg : args) {
+            if (arg.equals("--mods")) {
+                ModFetcher.main(args);
+                return;
+            }
+        }
+
         if (args.length < 1) {
             System.err.println("usage: GeoImporter <configDir> [--bbox minLat,maxLat,minLon,maxLon]"
                     + " [--only elevation,koppen,climate,geology]");
+            System.err.println("   or: GeoImporter --mods <modsDir> [--only id,id]");
             System.exit(2);
         }
         Path configDir = Path.of(args[0]).toAbsolutePath();

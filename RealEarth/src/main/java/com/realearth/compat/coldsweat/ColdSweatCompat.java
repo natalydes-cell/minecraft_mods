@@ -6,7 +6,6 @@ import com.momosoftworks.coldsweat.api.util.Temperature;
 import com.realearth.core.RealEarth;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
@@ -25,8 +24,18 @@ public final class ColdSweatCompat {
 
     private ColdSweatCompat() {}
 
-    public static void register(IEventBus modEventBus) {
-        modEventBus.addListener(ColdSweatCompat::onRegisterModifiers);
+    /**
+     * Both listeners go on the GAME bus, not the mod bus.
+     *
+     * <p>This is not a detail to guess at. Cold Sweat's events extend {@code Event} without
+     * implementing {@code IModBusEvent}, which means the mod bus rejects them outright - and it
+     * rejects them by throwing during mod construction, so the whole game fails to start rather
+     * than quietly skipping the integration. An earlier version registered
+     * {@code TempModifierRegisterEvent} on the mod bus and hard-crashed every pack that had Cold
+     * Sweat installed.
+     */
+    public static void register() {
+        NeoForge.EVENT_BUS.addListener(ColdSweatCompat::onRegisterModifiers);
         NeoForge.EVENT_BUS.addListener(ColdSweatCompat::onGatherModifiers);
         RealEarth.LOG.info("Cold Sweat detected - world temperature will follow the real climate "
                 + "instead of the biome");

@@ -75,7 +75,7 @@ public final class RealEarth {
         // would be inlined by the compiler today and might not be tomorrow, and the whole point
         // is that its name is never resolved on an install without Cold Sweat.
         if (ModList.get().isLoaded("cold_sweat")) {
-            com.realearth.compat.coldsweat.ColdSweatCompat.register(modEventBus);
+            com.realearth.compat.coldsweat.ColdSweatCompat.register();
         }
     }
 

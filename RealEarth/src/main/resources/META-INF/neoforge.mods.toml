@@ -34,8 +34,19 @@ versionRange = "*"
 ordering = "AFTER"
 side = "BOTH"
 
+# Volumetric clouds. Needs no API from us: it derives its coverage from the vanilla rain and
+# thunder levels, which WeatherSync drives per player. Listed so the load order is stable.
 [[dependencies.${mod_id}]]
-modId = "voxy"
+modId = "betterclouds"
+type = "optional"
+versionRange = "*"
+ordering = "AFTER"
+side = "CLIENT"
+
+# Far-distance LOD terrain. Also needs no API from us - it calls ChunkGenerator.getBaseHeight,
+# which this mod answers straight from the elevation raster.
+[[dependencies.${mod_id}]]
+modId = "distanthorizons"
 type = "optional"
 versionRange = "*"
 ordering = "AFTER"
