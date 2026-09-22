@@ -6,6 +6,7 @@ import com.realearth.climate.CycloneSystem;
 import com.realearth.climate.KoppenClass;
 import com.realearth.climate.SolarTime;
 import com.realearth.climate.WeatherManager;
+import com.realearth.climate.WeatherSync;
 import com.realearth.data.EarthData;
 import com.realearth.region.Region;
 import com.realearth.util.GeoProjection;
@@ -71,6 +72,8 @@ public final class RealEarthCommand {
                                 }))));
 
         root.then(Commands.literal("storms").executes(ctx -> storms(ctx.getSource())));
+
+        root.then(Commands.literal("weather").executes(ctx -> weather(ctx.getSource())));
 
         event.getDispatcher().register(root);
     }
@@ -155,6 +158,40 @@ public final class RealEarthCommand {
                 Math.abs(c.longitude), c.longitude >= 0 ? "E" : "W",
                 c.intensity, c.ageHours, c.lifetimeHours));
         if (active.size() > 12) line(src, "  ... and %d more", active.size() - 12);
+        return 1;
+    }
+
+    /**
+     * What is actually being sent to each client's rain and thunder gradients.
+     *
+     * <p>These two numbers are the whole cloud integration: Better Clouds and the vanilla cloud
+     * layer both derive coverage from {@code max(rain, thunder)}. Being able to read them is the
+     * difference between "the clouds look wrong" and knowing which end of the chain is at fault.
+     */
+    private static int weather(CommandSourceStack src) {
+        ServerLevel level = levelOrNull(src);
+        if (level == null) {
+            line(src, "no world loaded yet");
+            return 0;
+        }
+        WeatherManager manager = WeatherManager.get(level);
+        if (level.players().isEmpty()) {
+            line(src, "no players online - weather is only sampled where somebody is standing");
+            return 0;
+        }
+        line(src, "%-18s %-14s %6s %7s %8s  %s", "player", "precipitation", "rain", "thunder",
+                "temp", "cloud base");
+        for (var player : level.players()) {
+            var w = manager.weatherFor(player);
+            if (w == null) {
+                line(src, "%-18s (not sampled yet)", player.getGameProfile().getName());
+                continue;
+            }
+            line(src, "%-18s %-14s %6.2f %7.2f %7.1fC  y=%d",
+                    player.getGameProfile().getName(), w.precipitation(),
+                    WeatherSync.rainLevelFor(w), WeatherSync.thunderLevelFor(w),
+                    w.temperatureC(), w.cloudBaseY());
+        }
         return 1;
     }
 

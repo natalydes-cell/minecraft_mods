@@ -26,6 +26,7 @@ public final class RealEarthConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_TIME_ZONES;
     public static final ModConfigSpec.BooleanValue ENABLE_SEA_ICE;
     public static final ModConfigSpec.BooleanValue ENABLE_FLOODS;
+    public static final ModConfigSpec.BooleanValue DRIVE_VANILLA_WEATHER;
 
     // --- Performance -----------------------------------------------------------------------
     public static final ModConfigSpec.IntValue WEATHER_SAMPLE_INTERVAL_TICKS;
@@ -91,6 +92,18 @@ public final class RealEarthConfig {
                         "them recede. Only water the flood itself placed is ever removed, so a",
                         "pond or canal you built is never drained.")
                 .define("enableFloods", true);
+        DRIVE_VANILLA_WEATHER = b
+                .comment("Send each player the rain and thunder level for THEIR position, so the",
+                        "simulated climate actually rains instead of only showing on the HUD.",
+                        "",
+                        "This is what makes volumetric cloud mods follow the real weather: Better",
+                        "Clouds takes its coverage from max(rainLevel, thunderLevel), so it picks",
+                        "this up with no integration at all. Vanilla clouds, rain particles and",
+                        "every other weather-aware mod follow the same way.",
+                        "",
+                        "Turning this ON disables the vanilla weather gamerule, because a level",
+                        "running its own weather cycle broadcasts over the per-player values.")
+                .define("driveVanillaWeather", true);
         b.pop();
 
         b.comment("Performance. Start here if the server is struggling.").push("performance");

@@ -3,6 +3,7 @@ package com.realearth.core;
 import com.realearth.climate.Floods;
 import com.realearth.climate.SeaIce;
 import com.realearth.climate.WeatherManager;
+import com.realearth.climate.WeatherSync;
 import com.realearth.stream.RegionUnloader;
 import com.realearth.util.GeoProjection;
 import com.realearth.weathering.WeatheringTicker;
@@ -41,6 +42,7 @@ public final class ServerEvents {
         }
 
         WeatherManager.get(level).tick(level);
+        WeatherSync.tick(level);
         WeatheringTicker.tick(level);
         SeaIce.tick(level);
         Floods.tick(level);
