@@ -5,6 +5,8 @@ import com.realearth.core.RealEarthConfig;
 import com.realearth.util.GeoProjection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
@@ -145,6 +147,13 @@ public final class DepositPlacer {
      * startup report is where the operator finds out.
      */
     private static BlockState resolve(DepositBlocks blocks, Deposit deposit, ChunkAccess chunk) {
+        // The common ore tag first. NeoForge packs agree on c:ores/<material>, so a pack with
+        // any tin mod at all answers "what is tin ore here" without anyone editing a config.
+        // This is what makes the modded half of the deposit table work out of the box instead
+        // of needing a hand-written id per modpack.
+        BlockState tagged = resolveTag(deposit.resource());
+        if (tagged != null) return tagged;
+
         List<String> ids = blocks.candidatesFor(deposit.resource());
         if (ids.isEmpty()) return null;
 
@@ -159,6 +168,32 @@ public final class DepositPlacer {
             if (block != null && block != Blocks.AIR) return block.defaultBlockState();
         }
         return null;
+    }
+
+    /**
+     * Looks the resource up as {@code c:ores/<material>}, the convention every NeoForge ore mod
+     * follows. Returns null for resources that have no such tag - oil and gas are fluids in every
+     * mod that has them, so there is nothing tagged as an ore to find.
+     */
+    private static BlockState resolveTag(Deposit.Resource resource) {
+        String material = switch (resource) {
+            case NICKEL -> "nickel";
+            case TIN -> "tin";
+            case BAUXITE -> "aluminum";
+            case URANIUM -> "uranium";
+            case POTASH, SALT -> "salt";
+            // Vanilla resources are left to the explicit id list: the tag would also match every
+            // modded variant, and coal should be coal, not whatever a tech mod added last.
+            default -> null;
+        };
+        if (material == null) return null;
+
+        TagKey<Block> tag = TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath("c", "ores/" + material));
+        return BuiltInRegistries.BLOCK.getTag(tag)
+                .flatMap(holders -> holders.stream().findFirst())
+                .map(holder -> holder.value().defaultBlockState())
+                .orElse(null);
     }
 
     // Deterministic scalar PRNG, same approach as RealisticCaves: identical output for identical

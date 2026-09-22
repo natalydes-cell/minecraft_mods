@@ -25,6 +25,7 @@ public final class RealEarthConfig {
     public static final ModConfigSpec.IntValue DAYS_PER_YEAR;
     public static final ModConfigSpec.BooleanValue ENABLE_TIME_ZONES;
     public static final ModConfigSpec.BooleanValue ENABLE_SEA_ICE;
+    public static final ModConfigSpec.BooleanValue ENABLE_FLOODS;
 
     // --- Performance -----------------------------------------------------------------------
     public static final ModConfigSpec.IntValue WEATHER_SAMPLE_INTERVAL_TICKS;
@@ -85,6 +86,11 @@ public final class RealEarthConfig {
                 .comment("Freeze and thaw polar and coastal water with the seasons, with drifting",
                         "floes and meltwater floods in spring.")
                 .define("enableSeaIce", true);
+        ENABLE_FLOODS = b
+                .comment("Raise rivers and lakes in the spring melt and the wet season, then let",
+                        "them recede. Only water the flood itself placed is ever removed, so a",
+                        "pond or canal you built is never drained.")
+                .define("enableFloods", true);
         b.pop();
 
         b.comment("Performance. Start here if the server is struggling.").push("performance");

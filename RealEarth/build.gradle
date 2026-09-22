@@ -40,9 +40,18 @@ repositories {
 }
 
 dependencies {
-    // Soft dependencies: compiled against, not required at runtime.
-    // compileOnly "maven.modrinth:cold-sweat:<version>"
-    // compileOnly "maven.modrinth:voxy:<version>"
+    // Soft dependencies: compiled against, absent at runtime unless the player installs them.
+    //
+    // compileOnly rather than implementation, so nothing is bundled and nothing is required.
+    // Every call into these is guarded by a mod-loaded check, and the integration classes are
+    // only ever touched after that check passes.
+    compileOnly "maven.modrinth:cold-sweat:2.4.3.1"
+
+    // Distant Horizons is NOT listed here on purpose. It needs no compile-time API from us: it
+    // builds its far LODs by calling ChunkGenerator.getBaseHeight and getBaseColumn, which this
+    // mod implements. The integration is making those two cheap, not linking against DH.
+    //
+    // Voxy is also absent, and cannot be added: it has no NeoForge build for 1.21.1 at all.
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -192,4 +201,12 @@ tasks.register('exportRelease', Copy) {
         from('docs')
         from('README.md')
     }
+}
+
+tasks.register('benchmarkTerrain', JavaExec) {
+    group = 'realearth'
+    description = 'Measures terrain sampling cost per chunk, to decide what is worth optimising.'
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'com.realearth.tools.Benchmark'
+    args = ['run/config/realearth']
 }

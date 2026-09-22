@@ -12,6 +12,7 @@ import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.loading.FMLPaths;
@@ -65,6 +66,17 @@ public final class RealEarth {
         BIOME_SOURCES.register(modEventBus);
 
         modEventBus.addListener(this::onCommonSetup);
+
+        // Optional integrations. The ModList check must happen BEFORE the compat class is
+        // named, or the JVM resolves its Cold Sweat references and dies with NoClassDefFoundError
+        // on any install that does not have it. Hence a method reference behind an if, rather
+        // than an annotation on the compat class.
+        // The id is a literal, not ColdSweatCompat.MOD_ID: reading a constant off that class
+        // would be inlined by the compiler today and might not be tomorrow, and the whole point
+        // is that its name is never resolved on an install without Cold Sweat.
+        if (ModList.get().isLoaded("cold_sweat")) {
+            com.realearth.compat.coldsweat.ColdSweatCompat.register(modEventBus);
+        }
     }
 
     private void onCommonSetup(net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent event) {

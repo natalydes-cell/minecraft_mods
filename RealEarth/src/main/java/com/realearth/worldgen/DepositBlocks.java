@@ -100,12 +100,20 @@ public final class DepositBlocks {
         m.put(Resource.SALT.name(), List.of("create:salt_ore", "minecraft:calcite"));
         m.put(Resource.POTASH.name(), List.of("create:salt_ore", "minecraft:calcite"));
 
-        // No vanilla equivalent. Fill these in for your modpack; empty means "place nothing".
+        // No vanilla equivalent. These are resolved by COMMON TAG first - see resolveTag in
+        // DepositPlacer - so on a pack with any ore mod they fill themselves in. The explicit
+        // ids below are only the fallback when no tagged block exists.
+        //
+        // Oil is the awkward one: it is a fluid in most mods, not an ore, so there is no
+        // c:ores/oil tag to find. These ids are the ore-like blocks the common oil mods use.
+        // Whichever is installed wins; if none is, nothing is placed and probe says so.
         m.put(Resource.OIL.name(), List.of(
-                // Create: The Factory Must Grow, Immersive Petroleum, Immersive Engineering.
-                // Left empty rather than guessed - a wrong id silently places nothing.
+                "tfmg:oil_shale",
+                "tfmg:deepslate_oil_shale",
+                "immersivepetroleum:stone_decoration",
+                "pneumaticcraft:oil_sand"
         ));
-        m.put(Resource.NATURAL_GAS.name(), List.of());
+        m.put(Resource.NATURAL_GAS.name(), List.of("tfmg:oil_shale"));
         m.put(Resource.NICKEL.name(), List.of("create:deepslate_zinc_ore", "create:zinc_ore"));
         m.put(Resource.TIN.name(), List.of());
         m.put(Resource.BAUXITE.name(), List.of());
