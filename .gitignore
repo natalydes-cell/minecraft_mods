@@ -1,0 +1,19 @@
+# Build output - regenerate with `gradlew build`
+build/
+.gradle/
+*/build/
+*/.gradle/
+
+# Dev run directory: contains a generated world, logs, and the download cache
+run/
+*/run/
+
+# Importer working files. The cache holds the original GeoTIFFs, which are
+# gigabytes and already converted into the tiles that ship in release/.
+download-cache/
+*.part
+
+# IDE
+.idea/
+*.iml
+.vscode/

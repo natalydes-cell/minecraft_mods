@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:overworld",
+  "generator": {
+    "type": "realearth:earth",
+    "biome_source": {
+      "type": "realearth:earth"
+    }
+  }
+}

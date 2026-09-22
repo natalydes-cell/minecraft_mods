@@ -1,0 +1,195 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.78'
+}
+
+version = "${mod_version}-mc${minecraft_version}"
+group = mod_group_id
+base { archivesName = mod_id }
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+neoForge {
+    version = project.neo_version
+    parchment {
+        mappingsVersion = project.parchment_version
+        minecraftVersion = project.parchment_mc
+    }
+    runs {
+        client { client() }
+        server { server(); programArgument '--nogui' }
+        data   { clientData() }
+        configureEach {
+            systemProperty 'forge.logging.markers', ''
+            systemProperty 'forge.logging.console.level', 'debug'
+            // RealEarth generates far more than vanilla, but the dev run shares the machine with
+            // Gradle and the decompiled-Minecraft cache. 2G is what actually fits on a 16 GB box;
+            // raise it for real play, not for a smoke test.
+            jvmArgument '-Xmx2G'
+        }
+    }
+    mods {
+        "${mod_id}" { sourceSet(sourceSets.main) }
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { name = 'CurseMaven'; url = 'https://cursemaven.com'; content { includeGroup 'curse.maven' } }
+    maven { name = 'Modrinth';   url = 'https://api.modrinth.com/maven'; content { includeGroup 'maven.modrinth' } }
+}
+
+dependencies {
+    // Soft dependencies: compiled against, not required at runtime.
+    // compileOnly "maven.modrinth:cold-sweat:<version>"
+    // compileOnly "maven.modrinth:voxy:<version>"
+}
+
+// ---------------------------------------------------------------------------------------------
+// The geodata importer.
+//
+// A separate source set with its own dependencies, deliberately NOT part of the mod. It runs once,
+// offline, to turn downloaded GeoTIFFs into the flat tiles the mod reads at runtime. Keeping it
+// out of `main` means the TIFF decoder never ships to players: the mod jar stays around a hundred
+// kilobytes instead of carrying a megabyte of image codec it would use for a few minutes, once.
+// ---------------------------------------------------------------------------------------------
+sourceSets {
+    tools {
+        java.srcDir 'src/tools/java'
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+configurations {
+    toolsImplementation.extendsFrom implementation
+}
+
+dependencies {
+    // TwelveMonkeys adds the TIFF variants ImageIO does not handle on its own - LZW, Deflate,
+    // tiled layouts and 16-bit samples, which is exactly what ETOPO and WorldClim ship.
+    toolsImplementation 'com.twelvemonkeys.imageio:imageio-tiff:3.12.0'
+    toolsImplementation 'com.google.code.gson:gson:2.11.0'
+}
+
+tasks.register('importGeodata', JavaExec) {
+    group = 'realearth'
+    description = 'Downloads and converts the open geodata into the tile format the mod reads.'
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'com.realearth.tools.GeoImporter'
+    // Output next to the dev run's config so `runServer` picks it up with no extra step.
+    args = ['run/config/realearth']
+    jvmArgs = ['-Xmx1G']
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    var replacements = [
+        minecraft_version: minecraft_version,
+        neo_version      : neo_version,
+        mod_id           : mod_id,
+        mod_name         : mod_name,
+        mod_version      : mod_version,
+        mod_license      : mod_license,
+        mod_group_id     : mod_group_id,
+    ]
+    inputs.properties replacements
+    filesMatching(['META-INF/neoforge.mods.toml']) { expand replacements }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+tasks.register('verifyGeodata', JavaExec) {
+    group = 'realearth'
+    description = 'Samples imported tiles at surveyed points and reports whether they match.'
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'com.realearth.tools.VerifyImport'
+    args = ['run/config/realearth']
+}
+
+// ---------------------------------------------------------------------------------------------
+// Standalone importer jar.
+//
+// Bundles the tools source set with its TIFF decoder so the importer runs from a plain
+// `java -jar` on any machine with Java 21. Without this, importing more regions later would mean
+// checking out the source and installing Gradle - unreasonable for something a server owner needs
+// to do once a month as they expand the world.
+// ---------------------------------------------------------------------------------------------
+tasks.register('importerJar', Jar) {
+    group = 'realearth'
+    description = 'Builds a self-contained geodata importer jar.'
+    archiveFileName = 'realearth-importer.jar'
+    destinationDirectory = layout.buildDirectory.dir('tools')
+    manifest {
+        attributes 'Main-Class': 'com.realearth.tools.GeoImporter'
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from sourceSets.tools.output
+    // Only the mod classes the importer actually touches, not the whole mod: pulling in the
+    // Minecraft-facing classes would drag the entire game onto the importer's classpath.
+    from(sourceSets.main.output) {
+        include 'com/realearth/data/**'
+        include 'com/realearth/climate/KoppenClass*'
+        include 'com/realearth/worldgen/ElevationCurve*'
+        include 'com/realearth/util/**'
+        include 'com/realearth/core/RealEarthConfig*'
+    }
+    from {
+        configurations.toolsRuntimeClasspath
+                .filter { it.name.contains('imageio') || it.name.contains('common-')
+                        || it.name.contains('gson') }
+                .collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    // Service registrations are how ImageIO discovers the TIFF plugin. Merging rather than
+    // letting one overwrite another is the difference between a working decoder and
+    // "no TIFF reader available".
+    from(configurations.toolsRuntimeClasspath.collect {
+        it.isDirectory() ? it : zipTree(it)
+    }) {
+        include 'META-INF/services/**'
+    }
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class'
+}
+
+// ---------------------------------------------------------------------------------------------
+// The export folder.
+//
+// Everything a person needs, laid out the way a Minecraft instance already is: drop `mods` and
+// `config` straight into .minecraft and it works. The download cache is deliberately excluded -
+// it is hundreds of megabytes of source GeoTIFFs that have already been converted and are of no
+// further use.
+// ---------------------------------------------------------------------------------------------
+tasks.register('exportRelease', Copy) {
+    group = 'realearth'
+    description = 'Assembles mod, config, geodata, importer and docs into one exportable folder.'
+    dependsOn tasks.named('build'), tasks.named('importerJar')
+
+    def out = layout.buildDirectory.dir('RealEarth-Release')
+    into out
+
+    from('export-root')
+
+    into('mods') {
+        from tasks.named('jar')
+    }
+    into('config') {
+        from('run/config/realearth.toml')
+    }
+    into('config/realearth') {
+        from('run/config/realearth') {
+            // The converted tiles and the two editable manifests. Not the cache: those are the
+            // original downloads, already converted, and they are what makes the folder huge.
+            exclude 'download-cache/**'
+        }
+    }
+    into('tools') {
+        from tasks.named('importerJar')
+        from('export-extra')
+    }
+    into('docs') {
+        from('docs')
+        from('README.md')
+    }
+}
